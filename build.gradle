@@ -5,16 +5,23 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:4.0.2'
-        classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:latest.release'
     }
 }
 
-
 allprojects {
-    apply plugin: 'com.jfrog.artifactory'
     apply plugin: 'maven-publish'
     repositories {
         google()
         mavenCentral()
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId = 'org.gradle.sample'
+            artifactId = 'library'
+            version = '0.0.1'
+        }
     }
 }
