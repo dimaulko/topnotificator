@@ -6,8 +6,8 @@
         <attr name="timeAnimationIn" format="integer" />
         <attr name="timeAnimationOut" format="integer" />
         <attr name="timeAnimationOutDirtyView" format="integer" />
-        <attr name="marginForAppearingView" format="integer" />
-        <attr name="marginForDisappearingView" format="integer" />
+        <attr name="marginForAppearingView" format="dimension" />
+        <attr name="marginForDisappearingView" format="dimension" />
     </declare-styleable>
 
 </resources>

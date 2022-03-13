@@ -27,6 +27,7 @@
         <entry key="app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" value="0.1375" />
         <entry key="app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml" value="0.1375" />
         <entry key="topnotificator/src/main/res/layout/notification.xml" value="0.2132725430597771" />
+        <entry key="topnotificator/src/main/res/layout/notification_message.xml" value="0.1" />
         <entry key="topnotificator/src/main/res/layout/notification_view.xml" value="0.14492753623188406" />
         <entry key="topnotificator/src/main/res/xml/attr.xml" value="0.1787037037037037" />
       </map>
