@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@color/white"
@@ -21,8 +20,8 @@
         <TextView
             android:id="@+id/tv_message"
             android:layout_width="0dp"
-            android:layout_gravity="center_vertical"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
             android:layout_marginStart="@dimen/margin_16"
             android:layout_marginTop="@dimen/margin_12"
             android:layout_marginEnd="@dimen/margin_16"
@@ -30,23 +29,23 @@
             android:layout_weight="5"
             android:fontFamily="@font/poppins_semi_bold"
             android:gravity="center"
+            android:text="👋 Let’s select 20 photos !\nLet’s select 20 photos !\nLet’s select 20 photos !\nLet’s select 20 photos "
             android:textColor="#000"
-            android:textSize="@dimen/text_size_16"
-            tools:text="👋 Let’s select 20 photos !\nLet’s select 20 photos !\nLet’s select 20 photos !\nLet’s select 20 photos " />
+            android:textSize="@dimen/text_size_16" />
 
         <TextView
             android:id="@+id/tv_button_ok"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:paddingStart="@dimen/margin_12"
-            android:paddingEnd="@dimen/margin_12"
-            android:paddingTop="@dimen/margin_24"
-            android:paddingBottom="@dimen/margin_24"
             android:layout_weight="1"
             android:clickable="true"
             android:focusable="true"
             android:gravity="center"
+            android:paddingStart="@dimen/margin_12"
+            android:paddingTop="@dimen/margin_24"
+            android:paddingEnd="@dimen/margin_12"
+            android:paddingBottom="@dimen/margin_24"
             android:text="OK"
             android:textAlignment="center"
             android:textAllCaps="true"

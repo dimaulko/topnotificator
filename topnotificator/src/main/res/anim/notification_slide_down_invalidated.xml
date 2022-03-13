@@ -2,14 +2,14 @@
 <set xmlns:android="http://schemas.android.com/apk/res/android"
     android:fillAfter="true">
     <alpha
-        android:duration="350"
+        android:duration="550"
         android:fromAlpha="1.0"
         android:interpolator="@android:anim/accelerate_interpolator"
         android:toAlpha="0.0" />
 
     <translate
-        android:duration="350"
+        android:duration="550"
         android:fromXDelta="0"
-        android:fromYDelta="50"
-        android:toYDelta="-50" />
+        android:fromYDelta="500"
+        android:toYDelta="800" />
 </set>
