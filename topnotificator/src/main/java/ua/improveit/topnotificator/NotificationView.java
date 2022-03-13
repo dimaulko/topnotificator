@@ -4,8 +4,11 @@ import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
 import android.animation.Animator;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.res.Resources;
+import android.content.res.TypedArray;
 import android.os.CountDownTimer;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
@@ -14,7 +17,6 @@ import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.TextView;
 
 import androidx.annotation.Dimension;
@@ -31,51 +33,41 @@ import java.lang.ref.WeakReference;
 
 public class NotificationView extends CoordinatorLayout {
 
-    private final long TIME_TO_SHOW = 5_000L;
+    private final long MIN_TIME_TO_SHOW = 2_000L;
+    private final long MAX_TIME_TO_SHOW = 10_000L;
+
+    private final long DEBUG_TIME_TO_SHOW = 5_000L;
+    private final long RELEASE_TIME_TO_SHOW = 4_000L;
     private final SwipeDismissBehavior<CardView> swipe = new SwipeDismissBehavior();
+    private long timeAnimationIn = MIN_TIME_TO_SHOW;
+    private long timeAnimationOut = MIN_TIME_TO_SHOW;
+    private long timeAnimationOutDirtyView = MIN_TIME_TO_SHOW;
+    @Dimension(unit = Dimension.DP)
+    private int marginForAppearingView = 64;
+    @Dimension(unit = Dimension.DP)
+    private int marginForDisappearingView = 32;
+    private long timeShowMessage = DEBUG_TIME_TO_SHOW;
     private WeakReference<NotificationView> INSTANCE;
     private MyTimer timer;
     private View currentNotificationView;
 
     public NotificationView(@NonNull Context context) {
         super(context);
-        init();
+        init(null);
     }
 
     public NotificationView(@NonNull Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
-        init();
+        init(attrs);
     }
 
     public NotificationView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init();
+        init(attrs);
     }
 
-    private void init() {
+    private void init(AttributeSet attrs) {
         View.inflate(getContext(), R.layout.notification_view, this);
-//        slideUp.setAnimationListener(new Animation.AnimationListener() {
-//            @Override
-//            public void onAnimationStart(Animation animation) {
-//
-//            }
-//
-//            @Override
-//            public void onAnimationEnd(Animation animation) {
-//                if (timer != null) {
-//                    timer.cancel();
-//                }
-//                if (currentNotificationView != null) {
-//                    removeView(currentNotificationView);
-////                }
-////            }
-////
-////            @Override
-////            public void onAnimationRepeat(Animation animation) {
-////
-////            }
-////        });
-
         swipe.setSwipeDirection(SwipeDismissBehavior.SWIPE_DIRECTION_START_TO_END);
         swipe.setStartAlphaSwipeDistance(0.1f);
         swipe.setEndAlphaSwipeDistance(0.6f);
@@ -95,15 +87,24 @@ public class NotificationView extends CoordinatorLayout {
             }
         });
         INSTANCE = new WeakReference<>(this);
+
+        if (attrs != null) {
+            TypedArray ta = getContext().obtainStyledAttributes(attrs, R.styleable.NotificationView, 0, 0);
+            try {
+                timeShowMessage = ta.getInt(R.styleable.NotificationView_timeToShowMessage, -1);
+                timeAnimationIn = ta.getInt(R.styleable.NotificationView_timeAnimationIn, -1);
+                timeAnimationOut = ta.getInt(R.styleable.NotificationView_timeAnimationOut, -1);
+                timeAnimationOutDirtyView = ta.getInt(R.styleable.NotificationView_timeAnimationOutDirtyView, -1);
+                marginForAppearingView = ta.getInt(R.styleable.NotificationView_timeAnimationOutDirtyView, 64);
+                marginForDisappearingView = ta.getInt(R.styleable.NotificationView_timeAnimationOutDirtyView, 32);
+            } finally {
+                ta.recycle();
+                validateData();
+            }
+        }
     }
 
     public void showMessage(String text) {
-        Log.d("Child count", "count " + this.getChildCount());
-
-        Animation slideUp = AnimationUtils.loadAnimation(getContext(), R.anim.notification_slide_up);
-        Animation slideDown = AnimationUtils.loadAnimation(getContext(), R.anim.notification_slide_down);
-        Animation slideDownInvalidated = AnimationUtils.loadAnimation(getContext(), R.anim.notification_slide_down_invalidated);
-
 
         View newView = constructMessageView();
         newView.setAlpha(0f);
@@ -115,36 +116,24 @@ public class NotificationView extends CoordinatorLayout {
         }
 
         if (currentNotificationView != null) {
-            if (currentNotificationView.getAnimation() != null && currentNotificationView.getAnimation().hasStarted() && !currentNotificationView.getAnimation().hasEnded()) {
-                slideDownInvalidated.setAnimationListener(null);
-                currentNotificationView.animate().alpha(0f).setDuration(500).setListener(new MyAnimatorListener(INSTANCE.get(), currentNotificationView, true)).start();
-            } else {
-                currentNotificationView.animate().alpha(0f).translationYBy(800).setDuration(500).setListener(new MyAnimatorListener(INSTANCE.get(), currentNotificationView, true)).start();
-//                slideDownInvalidated.setAnimationListener(new MyAnimDown(INSTANCE.get(), currentNotificationView, true));
-//                currentNotificationView.startAnimation(slideDownInvalidated);
-            }
+            createSlideDownImmediatelyAnimationSet(currentNotificationView, new MyAnimatorListener(INSTANCE.get(), currentNotificationView, true)).start();
         }
 
 
-        LayoutParams coordinatorParams =
+        LayoutParams lp =
                 (LayoutParams) newView.getLayoutParams();
 
-        coordinatorParams.setBehavior(swipe);
+        lp.setBehavior(swipe);
 
         addView(newView);
-//        slideDown.setFillAfter(true);
-//        slideDown.setAnimationListener(new MyAnimDown(this, newView, false));
-//        newView.startAnimation(slideDown);
-        newView.animate().alpha(1f).translationYBy(500).setDuration(3000).setListener(new MyAnimatorListener(INSTANCE.get(), currentNotificationView, false)).start();
+        createSlideDownAnimationSet(newView).start();
         currentNotificationView = newView;
-//        currentNotificationView.animate().alpha(0).translationYBy(350).setDuration(500).setListener(new MyAnimatorListener(INSTANCE.get(), currentNotificationView, true)).start();
-//        slideUp.setAnimationListener(new MyAnimDown(this, newView, true));
-        timer = new MyTimer(currentNotificationView, slideUp, TIME_TO_SHOW);
+        timer = new MyTimer(currentNotificationView, DEBUG_TIME_TO_SHOW);
         timer.start();
     }
 
     public CardView constructMessageView() {
-        CardView view = (CardView) View.inflate(getContext(), R.layout.notification, null);
+        CardView view = (CardView) View.inflate(getContext(), R.layout.notification_message, null);
         LayoutParams params = new LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         params.topMargin = dpToPx(0);
         params.leftMargin = dpToPx(16);
@@ -159,7 +148,7 @@ public class NotificationView extends CoordinatorLayout {
                     timer = null;
                 }
 
-//                view.startAnimation(slideUp);
+                createSlideUpAnimationSet(view, new MyAnimatorListener(INSTANCE.get(), view, true)).start();
 
             } catch (Exception ex) {
                 if (BuildConfig.DEBUG) {
@@ -177,29 +166,83 @@ public class NotificationView extends CoordinatorLayout {
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, displayMetrics);
     }
 
+    private AnimatorSet createSlideDownAnimationSet(View view) {
+        ObjectAnimator animX = ObjectAnimator.ofFloat(view, "alpha", 1f);
+        ObjectAnimator animY = ObjectAnimator.ofFloat(view, "translationY", dpToPx(marginForAppearingView));
+        AnimatorSet animSetXY = new AnimatorSet();
+        animSetXY.playTogether(animX, animY);
+        animSetXY.setDuration(timeAnimationIn);
+        return animSetXY;
+    }
+
+    private AnimatorSet createSlideUpAnimationSet(View view, Animator.AnimatorListener listener) {
+        ObjectAnimator animX = ObjectAnimator.ofFloat(view, "alpha", 0f);
+        ObjectAnimator animY = ObjectAnimator.ofFloat(view, "translationY", -350);
+        AnimatorSet animSetXY = new AnimatorSet();
+        animSetXY.playTogether(animX, animY);
+        animSetXY.setDuration(timeAnimationOut);
+        animSetXY.addListener(listener);
+        return animSetXY;
+    }
+
+    private AnimatorSet createSlideDownImmediatelyAnimationSet(View view, Animator.AnimatorListener listener) {
+        ObjectAnimator animX = ObjectAnimator.ofFloat(view, "alpha", 0f);
+        ObjectAnimator animY = ObjectAnimator.ofFloat(view, "translationY", dpToPx(marginForDisappearingView + marginForAppearingView) + view.getHeight());
+        AnimatorSet animSetXY = new AnimatorSet();
+        animSetXY.playTogether(animX, animY);
+        animSetXY.setDuration(timeAnimationOutDirtyView);
+        animSetXY.addListener(listener);
+        return animSetXY;
+    }
+
+    private void validateData() {
+
+        if (timeShowMessage < MIN_TIME_TO_SHOW || timeShowMessage > MAX_TIME_TO_SHOW) {
+            timeShowMessage = BuildConfig.DEBUG ? DEBUG_TIME_TO_SHOW : RELEASE_TIME_TO_SHOW;
+        }
+
+        if (timeAnimationIn < 350 || timeAnimationIn > 3_000) {
+            timeAnimationIn = 550;
+        }
+
+        if (timeAnimationOut < 350 || timeAnimationOut > 3_000) {
+            timeAnimationOut = 350;
+        }
+
+        if (timeAnimationOutDirtyView < 350 || timeAnimationOutDirtyView > 1_000) {
+            timeAnimationOutDirtyView = 450;
+        }
+
+        if (marginForAppearingView < 24 || marginForAppearingView > 96) {
+            marginForAppearingView = 64;
+        }
+
+        if (marginForDisappearingView < 12 || marginForDisappearingView > 64) {
+            marginForDisappearingView = 32;
+        }
+    }
+
     class MyTimer extends CountDownTimer {
 
         WeakReference<View> _view;
-        WeakReference<Animation> _anim;
 
-        public MyTimer(View view, Animation anim, long period) {
-            super(period, 300);
+        public MyTimer(View view, long period) {
+            super(period, 250);
             _view = new WeakReference<>(view);
-            _anim = new WeakReference<>(anim);
         }
 
         @Override
         public void onTick(long millisUntilFinished) {
-            Log.e(this.getClass().getSimpleName(), "TIK " + millisUntilFinished);
+            if (BuildConfig.DEBUG) {
+                Log.e(this.getClass().getSimpleName(), "TIK " + millisUntilFinished);
+            }
         }
 
         @Override
         public void onFinish() {
-//            if (_view != null && _view.get() != null && _anim != null && _anim.get() != null) {
             if (_view != null && _view.get() != null) {
                 try {
-                    _view.get().animate().alpha(0f).translationY(-350).setDuration(500).setListener(new MyAnimatorListener(INSTANCE.get(), _view.get(), true)).start();
-//                    _view.get().startAnimation(_anim.get());
+                    createSlideUpAnimationSet(_view.get(), new MyAnimatorListener(INSTANCE.get(), _view.get(), true)).start();
                 } catch (Exception e) {
                     if (BuildConfig.DEBUG) {
                         Log.e(this.getClass().getSimpleName(), "Error", e);
@@ -232,9 +275,8 @@ public class NotificationView extends CoordinatorLayout {
                     && _viewRef != null && _viewRef.get() != null) {
                 _viewRef.get().setVisibility(GONE);
                 _viewGroupRef.get().removeView(_viewRef.get());
-                Log.d("Removinng", "ID: " + _viewRef.get().getId());
             } else {
-                Log.d("Removinng", "CantRemove view");
+                Log.d("Removing", "CantRemove view");
             }
         }
 
@@ -266,11 +308,8 @@ public class NotificationView extends CoordinatorLayout {
             if (_removeAfter && _viewGroupRef != null && _viewGroupRef.get() != null
                     && _viewRef != null && _viewRef.get() != null) {
                 _viewGroupRef.get().removeView(_viewRef.get());
-                Log.d("Removinng", "ID: " + _viewRef.get().getId());
             } else {
-                Log.d("Removinng", "CantRemove view");
-                Log.d("_viewGroupRef.get()", String.valueOf(_viewGroupRef.get() == null));
-                Log.d("_viewRef.get()", String.valueOf(_viewRef.get() == null));
+                Log.d("Removing", "CantRemove view");
             }
         }
 

@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@color/white"
-    android:elevation="@dimen/elevation_4"
+    android:elevation="@dimen/elevation_16"
     android:visibility="visible"
     app:cardCornerRadius="@dimen/radius_card_8"
     app:layout_constraintLeft_toLeftOf="parent"

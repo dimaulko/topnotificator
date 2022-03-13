@@ -2,7 +2,12 @@
 <resources>
 
     <declare-styleable name="NotificationView">
-        <attr name="timeToShowMessage" format="integer"/>
+        <attr name="timeToShowMessage" format="integer" />
+        <attr name="timeAnimationIn" format="integer" />
+        <attr name="timeAnimationOut" format="integer" />
+        <attr name="timeAnimationOutDirtyView" format="integer" />
+        <attr name="marginForAppearingView" format="integer" />
+        <attr name="marginForDisappearingView" format="integer" />
     </declare-styleable>
 
 </resources>

@@ -12,5 +12,6 @@
     <dimen name="text_size_16">16sp</dimen>
 
     <dimen name="elevation_4">4dp</dimen>
+    <dimen name="elevation_16">16dp</dimen>
 
 </resources>
