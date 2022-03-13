@@ -38,14 +38,13 @@ public class NotificationView extends CoordinatorLayout {
 
     private final long DEBUG_TIME_TO_SHOW = 5_000L;
     private final long RELEASE_TIME_TO_SHOW = 4_000L;
-    private final SwipeDismissBehavior<CardView> swipe = new SwipeDismissBehavior();
     private long timeAnimationIn = MIN_TIME_TO_SHOW;
     private long timeAnimationOut = MIN_TIME_TO_SHOW;
     private long timeAnimationOutDirtyView = MIN_TIME_TO_SHOW;
     @Dimension(unit = Dimension.DP)
-    private int marginForAppearingView = 64;
+    private int marginForAppearingView = 24;
     @Dimension(unit = Dimension.DP)
-    private int marginForDisappearingView = 32;
+    private int marginForDisappearingView = 16;
     private long timeShowMessage = DEBUG_TIME_TO_SHOW;
     private WeakReference<NotificationView> INSTANCE;
     private MyTimer timer;
@@ -68,24 +67,7 @@ public class NotificationView extends CoordinatorLayout {
 
     private void init(AttributeSet attrs) {
         View.inflate(getContext(), R.layout.notification_view, this);
-        swipe.setSwipeDirection(SwipeDismissBehavior.SWIPE_DIRECTION_START_TO_END);
-        swipe.setStartAlphaSwipeDistance(0.1f);
-        swipe.setEndAlphaSwipeDistance(0.6f);
-        swipe.setListener(new SwipeDismissBehavior.OnDismissListener() {
-            @Override
-            public void onDismiss(View view) {
-                if (timer != null) {
-                    timer.cancel();
-                }
-                if (currentNotificationView != null) {
-                    removeView(currentNotificationView);
-                }
-            }
 
-            @Override
-            public void onDragStateChanged(int state) {
-            }
-        });
         INSTANCE = new WeakReference<>(this);
 
         if (attrs != null) {
@@ -95,8 +77,8 @@ public class NotificationView extends CoordinatorLayout {
                 timeAnimationIn = ta.getInt(R.styleable.NotificationView_timeAnimationIn, -1);
                 timeAnimationOut = ta.getInt(R.styleable.NotificationView_timeAnimationOut, -1);
                 timeAnimationOutDirtyView = ta.getInt(R.styleable.NotificationView_timeAnimationOutDirtyView, -1);
-                marginForAppearingView = ta.getInt(R.styleable.NotificationView_timeAnimationOutDirtyView, 64);
-                marginForDisappearingView = ta.getInt(R.styleable.NotificationView_timeAnimationOutDirtyView, 32);
+                marginForAppearingView = ta.getLayoutDimension(R.styleable.NotificationView_marginForAppearingView, 24);
+                marginForDisappearingView = ta.getLayoutDimension(R.styleable.NotificationView_marginForDisappearingView, 16);
             } finally {
                 ta.recycle();
                 validateData();
@@ -119,11 +101,10 @@ public class NotificationView extends CoordinatorLayout {
             createSlideDownImmediatelyAnimationSet(currentNotificationView, new MyAnimatorListener(INSTANCE.get(), currentNotificationView, true)).start();
         }
 
-
         LayoutParams lp =
                 (LayoutParams) newView.getLayoutParams();
 
-        lp.setBehavior(swipe);
+        lp.setBehavior(createSwipeDismissBehavior(newView));
 
         addView(newView);
         createSlideDownAnimationSet(newView).start();
@@ -167,8 +148,9 @@ public class NotificationView extends CoordinatorLayout {
     }
 
     private AnimatorSet createSlideDownAnimationSet(View view) {
+        int t = marginForAppearingView;
         ObjectAnimator animX = ObjectAnimator.ofFloat(view, "alpha", 1f);
-        ObjectAnimator animY = ObjectAnimator.ofFloat(view, "translationY", dpToPx(marginForAppearingView));
+        ObjectAnimator animY = ObjectAnimator.ofFloat(view, "translationY", t);
         AnimatorSet animSetXY = new AnimatorSet();
         animSetXY.playTogether(animX, animY);
         animSetXY.setDuration(timeAnimationIn);
@@ -187,12 +169,36 @@ public class NotificationView extends CoordinatorLayout {
 
     private AnimatorSet createSlideDownImmediatelyAnimationSet(View view, Animator.AnimatorListener listener) {
         ObjectAnimator animX = ObjectAnimator.ofFloat(view, "alpha", 0f);
-        ObjectAnimator animY = ObjectAnimator.ofFloat(view, "translationY", dpToPx(marginForDisappearingView + marginForAppearingView) + view.getHeight());
+        ObjectAnimator animY = ObjectAnimator.ofFloat(view, "translationY", marginForDisappearingView + marginForAppearingView + view.getHeight());
         AnimatorSet animSetXY = new AnimatorSet();
         animSetXY.playTogether(animX, animY);
         animSetXY.setDuration(timeAnimationOutDirtyView);
         animSetXY.addListener(listener);
         return animSetXY;
+    }
+
+    private SwipeDismissBehavior createSwipeDismissBehavior(View _view) {
+        SwipeDismissBehavior swipe = new SwipeDismissBehavior();
+        swipe.setSwipeDirection(SwipeDismissBehavior.SWIPE_DIRECTION_START_TO_END);
+        swipe.setStartAlphaSwipeDistance(0.1f);
+        swipe.setEndAlphaSwipeDistance(0.6f);
+        swipe.setListener(new SwipeDismissBehavior.OnDismissListener() {
+            @Override
+            public void onDismiss(View view) {
+                if (timer != null) {
+                    timer.cancel();
+                }
+                if (_view != null) {
+                    removeView(_view);
+                }
+            }
+
+            @Override
+            public void onDragStateChanged(int state) {
+            }
+        });
+        swipe.setListener(new MySwipeToDismiss(INSTANCE.get(), _view));
+        return swipe;
     }
 
     private void validateData() {
@@ -213,12 +219,38 @@ public class NotificationView extends CoordinatorLayout {
             timeAnimationOutDirtyView = 450;
         }
 
-        if (marginForAppearingView < 24 || marginForAppearingView > 96) {
+        if (marginForAppearingView < 24 || marginForAppearingView > 128) {
             marginForAppearingView = 64;
         }
 
         if (marginForDisappearingView < 12 || marginForDisappearingView > 64) {
             marginForDisappearingView = 32;
+        }
+    }
+
+    class MySwipeToDismiss implements SwipeDismissBehavior.OnDismissListener {
+
+        WeakReference<View> weakViewReference;
+        WeakReference<ViewGroup> weakViewGroupReference;
+
+        MySwipeToDismiss(ViewGroup _viewGroup, View _view) {
+            weakViewReference = new WeakReference<>(_view);
+            weakViewGroupReference = new WeakReference<>(_viewGroup);
+        }
+
+        @Override
+        public void onDismiss(View view) {
+            if (timer != null) {
+                timer.cancel();
+            }
+            if (weakViewGroupReference != null && weakViewGroupReference.get() != null
+                    && weakViewReference != null && weakViewReference.get() != null) {
+                weakViewGroupReference.get().removeView(weakViewReference.get());
+            }
+        }
+
+        @Override
+        public void onDragStateChanged(int state) {
         }
     }
 

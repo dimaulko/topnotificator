@@ -3,10 +3,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/white"
+    android:background="#ffff"
     android:elevation="@dimen/elevation_16"
     android:visibility="visible"
-    app:cardCornerRadius="@dimen/radius_card_8"
+    app:cardCornerRadius="@dimen/corner_8"
     app:layout_constraintLeft_toLeftOf="parent"
     app:layout_constraintRight_toRightOf="parent"
     app:layout_constraintTop_toTopOf="parent">
